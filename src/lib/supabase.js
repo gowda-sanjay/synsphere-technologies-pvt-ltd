@@ -9,14 +9,26 @@ export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabas
 export async function createEnquiry(payload) {
   if (!supabase) return { demo: true }
   const { error } = await supabase.from('enquiries').insert(payload)
-  if (error) throw new Error('Unable to submit enquiry')
+  if (error) {
+    const submissionError = new Error(error.message)
+    submissionError.code = error.code
+    submissionError.details = error.details
+    submissionError.hint = error.hint
+    throw submissionError
+  }
   return { demo: false }
 }
 
 export async function createContact(payload) {
   if (!supabase) return { demo: true }
   const { error } = await supabase.from('contacts').insert(payload)
-  if (error) throw new Error('Unable to submit contact')
+  if (error) {
+    const submissionError = new Error(error.message)
+    submissionError.code = error.code
+    submissionError.details = error.details
+    submissionError.hint = error.hint
+    throw submissionError
+  }
   return { demo: false }
 }
 
