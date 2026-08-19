@@ -7,7 +7,7 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseAnonKey) : null
 
 export async function createEnquiry(payload) {
-  if (!supabase) return { demo: true }
+  if (!supabase) throw new Error('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the hosting environment.')
   const { error } = await supabase.from('enquiries').insert(payload)
   if (error) {
     const submissionError = new Error(error.message)
@@ -20,7 +20,7 @@ export async function createEnquiry(payload) {
 }
 
 export async function createContact(payload) {
-  if (!supabase) return { demo: true }
+  if (!supabase) throw new Error('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the hosting environment.')
   const { error } = await supabase.from('contacts').insert(payload)
   if (error) {
     const submissionError = new Error(error.message)
