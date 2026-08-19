@@ -17,7 +17,11 @@ function ContactPage() {
     try {
       const attachmentUrl = await uploadEnquiryAttachment(form.get('attachment'))
       await createEnquiry({ name: form.get('name'), company_name: form.get('company'), email: form.get('email'), phone: form.get('phone'), country: form.get('country'), service: form.get('service'), budget: form.get('budget'), timeline: form.get('timeline'), project_description: form.get('description'), attachment_url: attachmentUrl, source: form.get('source') })
-      await createContact({ name: form.get('name'), email: form.get('email'), phone: form.get('phone'), message: form.get('description') })
+      try {
+        await createContact({ name: form.get('name'), email: form.get('email'), phone: form.get('phone'), message: form.get('description') })
+      } catch (contactError) {
+        console.warn('Synsphere contact mirror insert failed after enquiry was stored:', contactError)
+      }
       setSent(true); event.currentTarget.reset()
     } catch (submissionError) { console.error('Synsphere enquiry submission failed:', submissionError); setError('We could not send your enquiry right now. Please try again or email us directly.') } finally { setSending(false) }
   }
