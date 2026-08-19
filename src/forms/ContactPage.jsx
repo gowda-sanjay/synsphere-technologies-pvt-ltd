@@ -16,7 +16,12 @@ function ContactPage() {
     if (!form.get('name') || !form.get('email') || !form.get('service') || !form.get('description')) { setError('Please complete the required fields so we can understand your request.'); return }
     setSending(true); setError('')
     try {
-      const attachmentUrl = await uploadEnquiryAttachment(form.get('attachment'))
+      let attachmentUrl = null
+      try {
+        attachmentUrl = await uploadEnquiryAttachment(form.get('attachment'))
+      } catch (attachmentError) {
+        console.warn('Synsphere attachment upload failed; continuing without attachment:', attachmentError)
+      }
       await createEnquiry({ name: form.get('name'), company_name: form.get('company'), email: form.get('email'), phone: form.get('phone'), country: form.get('country'), service: form.get('service'), budget: form.get('budget'), timeline: form.get('timeline'), project_description: form.get('description'), attachment_url: attachmentUrl, source: form.get('source') })
       try {
         await createContact({ name: form.get('name'), email: form.get('email'), phone: form.get('phone'), message: form.get('description') })

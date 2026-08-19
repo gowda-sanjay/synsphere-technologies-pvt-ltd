@@ -24,18 +24,22 @@ function AdminWorkspace() {
 
   useEffect(() => {
     if (!supabase) return undefined
-    async function acceptSession(nextSession) {
+    function acceptSession(nextSession) {
       const nextEmail = nextSession?.user?.email?.toLowerCase()
       if (nextSession && nextEmail !== ADMIN_EMAIL) {
         setAuthError('This account is not authorized to access the Synsphere admin workspace.')
-        await supabase.auth.signOut()
+        console.error('Synsphere admin authorization rejected:', { email: nextSession.user.email })
+        void supabase.auth.signOut()
         setSession(null)
         return
       }
       setAuthError('')
       setSession(nextSession)
     }
-    supabase.auth.getSession().then(({ data }) => acceptSession(data.session))
+    supabase.auth.getSession().then(({ data }) => acceptSession(data.session)).catch((error) => {
+      console.error('Synsphere admin session restore failed:', error)
+      setAuthError('Unable to restore the admin session. Please sign in again.')
+    })
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => acceptSession(nextSession))
     return () => listener.subscription.unsubscribe()
   }, [])
@@ -51,7 +55,10 @@ function AdminWorkspace() {
       supabase.from('contacts').select('*').order('created_at', { ascending: false }),
       supabase.from('projects').select('*').order('created_at', { ascending: false }),
     ])
-    if (enquiryResult.error || contactResult.error || projectResult.error) setAuthError('Your account is signed in, but it is not authorized to read the admin workspace.')
+    if (enquiryResult.error || contactResult.error || projectResult.error) {
+      console.error('Synsphere admin data load failed:', { enquiries: enquiryResult.error, contacts: contactResult.error, projects: projectResult.error })
+      setAuthError('Your account is signed in, but it is not authorized to read the admin workspace.')
+    }
     setEnquiries(enquiryResult.data || [])
     setContacts(contactResult.data || [])
     setProjects(projectResult.data || [])
@@ -61,8 +68,11 @@ function AdminWorkspace() {
   async function signIn(event) {
     event.preventDefault()
     setAuthError('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) setAuthError('Sign in failed. Check your credentials or ask an administrator to enable your account.')
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
+    if (error) {
+      console.error('Synsphere admin sign-in failed:', error)
+      setAuthError('Sign in failed. Check your credentials or ask an administrator to enable your account.')
+    }
   }
 
   async function updateStatus(id, status) {
