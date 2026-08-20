@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowUpRight, Check, LogOut, Plus, RefreshCw, Save, Trash2, X } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import WebsiteStatistics from './WebsiteStatistics'
 
@@ -10,6 +10,7 @@ const ADMIN_EMAIL = 'sanjaygowdaca5@gmail.com'
 
 function AdminWorkspace() {
   const [session, setSession] = useState(null)
+  const [authChecked, setAuthChecked] = useState(false)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [authError, setAuthError] = useState('')
@@ -21,6 +22,8 @@ function AdminWorkspace() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
   const [project, setProject] = useState(null)
+  const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (!supabase) return undefined
@@ -31,18 +34,25 @@ function AdminWorkspace() {
         console.error('Synsphere admin authorization rejected:', { email: nextSession.user.email })
         void supabase.auth.signOut()
         setSession(null)
+        setAuthChecked(true)
+        navigate('/admin/login', { replace: true })
         return
       }
       setAuthError('')
       setSession(nextSession)
+      setAuthChecked(true)
+      if (nextSession && location.pathname === '/admin/login') navigate('/admin/dashboard', { replace: true })
+      if (!nextSession && location.pathname === '/admin/dashboard') navigate('/admin/login', { replace: true })
     }
     supabase.auth.getSession().then(({ data }) => acceptSession(data.session)).catch((error) => {
       console.error('Synsphere admin session restore failed:', error)
       setAuthError('Unable to restore the admin session. Please sign in again.')
+      setAuthChecked(true)
+      navigate('/admin/login', { replace: true })
     })
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => acceptSession(nextSession))
     return () => listener.subscription.unsubscribe()
-  }, [])
+  }, [location.pathname, navigate])
 
   useEffect(() => {
     if (session) loadWorkspace()
@@ -71,7 +81,7 @@ function AdminWorkspace() {
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
     if (error) {
       console.error('Synsphere admin sign-in failed:', error)
-      setAuthError('Sign in failed. Check your credentials or ask an administrator to enable your account.')
+      setAuthError(error.message || 'Supabase could not sign you in.')
     }
   }
 
@@ -114,6 +124,7 @@ function AdminWorkspace() {
   }
 
   if (!isSupabaseConfigured) return <main className="admin-login"><div className="login-panel"><img src="/synsphere-logo.png" alt="SynSphere Technologies Pvt Ltd" className="h-20 w-auto object-contain" /><span className="eyebrow">Supabase required</span><h1>Connect the workspace.</h1><p>Add Supabase environment variables before using admin authentication.</p><Link className="button primary" to="/">Return to website <ArrowUpRight size={16} /></Link></div></main>
+  if (!authChecked) return <main className="admin-login"><div className="login-panel"><span className="eyebrow">Secure workspace</span><h1>Checking session...</h1></div></main>
   if (!session) return <main className="admin-login"><form className="login-panel" onSubmit={signIn}><img src="/synsphere-logo.png" alt="SynSphere Technologies Pvt Ltd" className="h-20 w-auto object-contain" /><span className="eyebrow">Secure workspace</span><h1>Admin sign in</h1><p>Use the Supabase Auth account created for your authorized admin.</p>{authError && <div className="form-error" role="alert">{authError}</div>}<input aria-label="Email address" placeholder="Email address" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /><input aria-label="Password" placeholder="Password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required /><button className="button primary" type="submit">Continue <ArrowUpRight size={16} /></button></form></main>
 
   const visibleEnquiries = enquiries.filter((item) => (filter === 'All' || item.status === filter) && `${item.name} ${item.company_name} ${item.service}`.toLowerCase().includes(search.toLowerCase()))
