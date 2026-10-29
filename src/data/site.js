@@ -1,6 +1,11 @@
+export const contactEmails = {
+  enquiries: 'info@synsphere.in',
+  careers: 'hr@synsphere.in',
+}
+
 export const company = {
   name: 'Synsphere Technologies Pvt Ltd',
-  email: import.meta.env.VITE_COMPANY_EMAIL || 'synsphere326@gmail.com',
+  email: import.meta.env.VITE_COMPANY_EMAIL || contactEmails.enquiries,
   instagram: 'https://www.instagram.com/synsphere_technologies/',
   linkedin: 'https://www.linkedin.com/in/synsphere-technologies-236282428',
   phone: import.meta.env.VITE_COMPANY_PHONE || '',
